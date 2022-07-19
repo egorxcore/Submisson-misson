@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using System.IO;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
@@ -9,12 +10,12 @@ public class MainManager : MonoBehaviour
     public Brick BrickPrefab;
     public int LineCount = 6;
     public Rigidbody Ball;
-
     public Text ScoreText;
     public GameObject GameOverText;
-    
+    private Text ScoreTextWithName;
     private bool m_Started = false;
     private int m_Points;
+    private int MaxScore;
     
     private bool m_GameOver = false;
 
@@ -22,6 +23,9 @@ public class MainManager : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
+        MaxScore = 0;
+        ScoreTextWithName = GameObject.Find("ScoreText (1)").GetComponent<Text>();
+        LoadName();
         const float step = 0.6f;
         int perLine = Mathf.FloorToInt(4.0f / step);
         
@@ -36,6 +40,37 @@ public class MainManager : MonoBehaviour
                 brick.onDestroyed.AddListener(AddPoint);
             }
         }
+        
+    }
+
+    private void SaveName()
+    {
+        if(m_Points > MaxScore)
+        {
+            string path = "C:/temp/game/name.json";
+            SavedName data = new SavedName();
+            data.Name = NameController.PlayerName;
+            data.Score = m_Points;
+            string json = JsonUtility.ToJson(data);
+            File.WriteAllText(path, json);
+        }
+
+    }
+    private void LoadName()
+    {
+        string path = "C:/temp/game/name.json";
+        if (File.Exists(path)){
+            string json = File.ReadAllText(path);
+            SavedName data = JsonUtility.FromJson<SavedName>(json);
+            ScoreTextWithName.text = "Best Score : " + data.Name + " : "+data.Score;
+            MaxScore = data.Score;
+        }
+    }
+
+    internal class SavedName
+    {
+        public string Name;
+        public int Score;
     }
 
     private void Update()
@@ -57,6 +92,7 @@ public class MainManager : MonoBehaviour
         {
             if (Input.GetKeyDown(KeyCode.Space))
             {
+                SaveName();
                 SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
             }
         }
